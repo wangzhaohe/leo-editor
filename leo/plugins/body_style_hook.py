@@ -48,8 +48,9 @@ def get_content_hash(c):
     except:
         return None
 #@+node:swot.20250715095543.1: ** is_line_height_applied
-def is_line_height_applied(editor_key, c):
+def is_line_height_applied(c):
     """Check if line height has been applied to current content"""
+    global editor_key
     if not editor_key:
         return False
     current_hash = get_content_hash(c)
@@ -58,8 +59,9 @@ def is_line_height_applied(editor_key, c):
     stored_hash = _applied_line_heights.get(editor_key)
     return stored_hash == current_hash
 #@+node:swot.20250715095521.1: ** mark_line_height_applied
-def mark_line_height_applied(editor_key, c):
+def mark_line_height_applied(c):
     """Mark that line height has been applied to current content"""
+    global editor_key
     current_hash = get_content_hash(c)
     if editor_key and current_hash:
         _applied_line_heights[editor_key] = current_hash
@@ -83,7 +85,7 @@ def apply_line_height_only(c):
         if not editor_key:
             return
         # Only apply if not already applied to current content
-        if is_line_height_applied(editor_key, c):
+        if is_line_height_applied(c):
             return
 
         doc = editor.document()
@@ -99,7 +101,7 @@ def apply_line_height_only(c):
                 block_cursor.setBlockFormat(block_format)
                 block = block.next()
             
-            mark_line_height_applied(editor_key, c)
+            mark_line_height_applied(c)
 
     except Exception as e:
         g.es("Failed to apply line height:", e)
@@ -182,7 +184,7 @@ def apply_editor_style_once(c):
             mark_font_applied(editor_key)
 
         # Apply line height using document default format
-        if not is_line_height_applied(editor_key, c):
+        if not is_line_height_applied(c):
             doc = editor.document()
             if doc:
                 # Get the font for document default
@@ -200,7 +202,7 @@ def apply_editor_style_once(c):
                     block_cursor.setBlockFormat(default_format)
                     block = block.next()
 
-                mark_line_height_applied(editor_key, c)
+                mark_line_height_applied(c)
 
         g.es(f"Applied style to editor {editor_key}")
 
