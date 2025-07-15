@@ -24,6 +24,8 @@ _applied_line_heights = {}  # Track line height applications
 # Flag to prevent recursion
 _applying_style = False
 
+# Global editor key
+editor_key = None
 #@+others
 #@+node:swot.20250715095600.1: ** get_editor_key
 def get_editor_key(c):
@@ -65,6 +67,7 @@ def mark_line_height_applied(editor_key, c):
 def apply_line_height_only(c):
     """Apply only line height without changing font"""
     global _applying_style
+    global editor_key
     
     if _applying_style:
         return  # Prevent recursion
@@ -76,7 +79,9 @@ def apply_line_height_only(c):
         if not editor or not editor.document():
             return
 
-        editor_key = get_editor_key(c)
+        # Use global editor_key
+        if not editor_key:
+            return
         # Only apply if not already applied to current content
         if is_line_height_applied(editor_key, c):
             return
@@ -116,7 +121,11 @@ def on_start(tag, keywords):
     """Called on startup"""
     print("on_start")
     c = keywords.get('c')
+    global editor_key
     if c:
+        # Set global editor_key only once
+        if editor_key is None:
+            editor_key = get_editor_key(c)
         # Apply to existing editor on startup
         schedule_apply_once(c, delay=100)
         # Connect to Qt text change signal
@@ -147,6 +156,7 @@ def schedule_apply_once(c, delay=50):
 def apply_editor_style_once(c):
     """Apply style only once when editor is first created"""
     global _applying_style
+    global editor_key
 
     if _applying_style:
         return  # Prevent recursion
@@ -158,7 +168,7 @@ def apply_editor_style_once(c):
         if not editor or not editor.document():
             return
 
-        editor_key = get_editor_key(c)
+        # Use global editor_key
         if not editor_key:
             return
 
@@ -231,8 +241,8 @@ def on_qt_text_changed(c):
 #@+node:swot.20250715091834.1: *6* force_reapply_line_height
 def force_reapply_line_height(c):
     """Force re-application of line height by clearing tracking and reapplying"""
+    global editor_key
     try:
-        editor_key = get_editor_key(c)
         if editor_key and editor_key in _applied_line_heights:
             del _applied_line_heights[editor_key]
         
