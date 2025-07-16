@@ -261,6 +261,5 @@ def on_content_loaded(tag, keywords):
     if c:
         # Apply only line height when content changes
         apply_line_height_only(c)
-#@+node:swot.20250715101710.1: ** Not Used
 #@-others
 #@-leo
