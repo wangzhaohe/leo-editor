@@ -3307,7 +3307,14 @@ class ViewRenderedController3(QtWidgets.QWidget):
         assert self.w
         self.rst_html = ''
 
-        ascdoc = self.process_asciidoc_nodes(node_list)
+        # Handle string input like update_rst does
+        if isinstance(node_list, str):
+            # We were called with a string instead of node_list
+            s = node_list
+            node_list = None
+            ascdoc = self.process_asciidoc_nodes(node_list, s)
+        else:
+            ascdoc = self.process_asciidoc_nodes(node_list)
         self.last_markup = ascdoc
         h = self.convert_to_asciidoc(ascdoc) or "No return from asciidoc processor"
         h = g.toUnicode(h)  # EKR.
@@ -3345,6 +3352,9 @@ class ViewRenderedController3(QtWidgets.QWidget):
             sm.reset()
         else:
             for node in node_list:
+                # Skip nodes marked with @ignore-node
+                if node.isAtIgnoreNode():
+                    continue
                 # Add node's text as a headline
                 s = node.b
                 s = self.remove_directives(s)
@@ -3356,7 +3366,13 @@ class ViewRenderedController3(QtWidgets.QWidget):
                         headline = ' '.join(fields[1:]) if len(fields) > 1 else header[1:]
                     else:
                         headline = header
-                    headline_str = '== ' + headline
+                    # Use node level to determine heading level
+                    level = node.level()
+                    # AsciiDoc heading levels: = (H1), == (H2), === (H3), etc.
+                    # Limit to reasonable levels (1-6)
+                    heading_level = min(max(level + 1, 1), 6)
+                    heading_prefix = '=' * heading_level
+                    headline_str = heading_prefix + ' ' + headline
                     s = headline_str + '\n' + s
                 lines = s.split('\n')
 
@@ -4710,7 +4726,7 @@ class ViewRenderedController3(QtWidgets.QWidget):
         colorizer = c.frame.body.colorizer
         language = colorizer.scanLanguageDirectives(p)
         if language == 'asciidoc':
-            p.update_asciidoc(s, keywords)
+            self.update_asciidoc(s, keywords)
         elif language in ('rest', 'rst'):
             self.update_rst(s, keywords)
         elif language in ('markdown', 'md'):

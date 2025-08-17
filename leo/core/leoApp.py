@@ -673,7 +673,7 @@ class LeoApp:
             "tpl"                : "<!-- -->",
             "tsql"               : "-- /* */",
             "typst"              : "//",
-            "typescript"         : "// /* */",  # For typescript import test.
+            "typescript"         : "//- /* */", # For typescript import test.
             "unknown"            : "#",  # Set when @comment is seen.
             "unknown_language"   : '#--unknown-language--',  # For unknown extensions in @shadow files.
             "uscript"            : "// /* */",
