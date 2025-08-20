@@ -1243,8 +1243,8 @@ MD_URLre = r'\((?P<url>.+)\)'
 MD_IMGre = MD_LABELre + MD_URLre
 MD_IMAGE_MARKER_RE = re.compile(MD_IMGre)
 
-ASCIIDOC_IMGre = r'image::(?P<url>.+)\[.*\]'
-ASCIIDOC_IMG = re.compile(ASCIIDOC_IMGre)
+
+
 #@-<< Other Line Markers >>
 
 _in_code_block = False
@@ -2418,6 +2418,8 @@ class ViewRenderedController3(QtWidgets.QWidget):
         self.prefer_external = c.config.getString('vr3-prefer-external') or ''
         if self.prefer_external:
             self.asciidoctor = find_exe(self.prefer_external) or None
+        else:
+            self.asciidoctor = None
 
         self.asciidoc_show_proc_fail_msgs = True
         self.asciidoctor_suppress_footer = c.config.getBool('vr3-asciidoctor-nofooter', default=False)
@@ -5121,20 +5123,15 @@ class Action:
                 if sm.structure == MD:
                     # image syntax: ![label](url)
                     line = f'![]({abs_url})'
-                elif sm.structure == ASCIIDOC:
-                    # image syntax: image:<target>[<attributes>] (must include "{}" even if no attributes
-                    line = f'image:{abs_url}[]'
                 sm.current_chunk.add_line(line)
             # If no url parameter, do nothing
     #@+node:tom.20240521002223.1: *4* Image Path to Absolute
     @staticmethod
     def image_url2abs(sm, line, tag=None, language=None):
-        """Convert MD or Asciidoc image directive's image path to an absolute one"""
+        """Convert MD image directive's image path to an absolute one"""
         is_image: Any = None
         if language == MD:
             is_image = MD_IMAGE_MARKER_RE.match(line)
-        elif language == ASCIIDOC:
-            is_image = ASCIIDOC_IMG.match(line)
         if is_image:
             url = is_image['url'].strip()
             if url.startswith('data:'):
@@ -5148,9 +5145,6 @@ class Action:
                 if sm.structure == MD:
                     # image syntax: ![label](url)
                     line = f'![]({abs_url})'
-                elif sm.structure == ASCIIDOC:
-                    # image syntax: image:<target>[<attributes>] (must include "{}" even if no attributes
-                    line = f'image:{abs_url}[]'
 
                 sm.current_chunk.add_line(line)
         else:
@@ -5186,7 +5180,6 @@ class Marker(Enum):
     IMAGE_MARKER = auto()
 
     MD_IMAGE_MARKER = auto()
-    ASCIIDOC_IMAGE_MARKER = auto()
     ASCDOC_CODE_MARKER = auto()
     ASCDOC_CODE_LANG_MARKER = auto()  # a line like "[source, python]" before a line "---"
 
@@ -5451,14 +5444,6 @@ class StateMachine:
             else:
                 marker = Marker.MARKER_NONE
 
-        elif line.startswith('image::') and self.structure == ASCIIDOC:
-            is_image = ASCIIDOC_IMG.match(line)
-            if is_image:
-                marker = Marker.ASCIIDOC_IMAGE_MARKER
-                lang = self.structure
-            else:
-                marker = Marker.MARKER_NONE
-
         elif line.startswith("@image"):
             marker = Marker.IMAGE_MARKER
             lang = self.structure
@@ -5495,7 +5480,6 @@ class StateMachine:
 
         (State.BASE, Marker.IMAGE_MARKER): (Action.add_image, State.BASE),
         (State.BASE, Marker.MD_IMAGE_MARKER): (Action.image_url2abs, State.BASE),
-        (State.BASE, Marker.ASCIIDOC_IMAGE_MARKER): (Action.image_url2abs, State.BASE),
 
         # ========= Markdown-specific states ==================
         (State.BASE, Marker.MD_FENCE_LANG_MARKER): (Action.new_chunk, State.FENCED_CODE),
